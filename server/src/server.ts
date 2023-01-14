@@ -13,10 +13,15 @@ async function bootstrap() {
   await fastify.register(cors, {
     origin: true,
   });
+
   fastify.get("/pools/count", async () => {
     const pools = await prisma.pool.count();
-
     return { count: pools };
+  });
+
+  fastify.post("/pools", async (req, res) => {
+    const { title } = req.body;
+    return { title };
   });
 
   await fastify.listen({ port: 3333 });
