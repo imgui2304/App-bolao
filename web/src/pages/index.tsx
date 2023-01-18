@@ -4,13 +4,38 @@ import usersAvatarExampleImg from "../assets/users-avatar-example.png";
 import iconCheckImg from "../assets/icon-check.svg";
 import Image from "next/image";
 import { api } from "@/lib/axios";
+import { FormEvent, useState } from "react";
 
 interface HomeProps {
   poolCount: number;
   guessCount: number;
-  userCount: number
+  userCount: number;
 }
 export default function Home(props: HomeProps) {
+  const [poolTitle, setPoolTitle] = useState("");
+  console.log(poolTitle);
+
+  async function createPool(event: FormEvent) {
+    event.preventDefault();
+
+    try {
+      const response = await api.post("pools", {
+        title: poolTitle,
+      });
+      const { code } = response.data;
+
+      navigator.clipboard.writeText(code);
+      setPoolTitle("");
+      alert(
+        "Bolão criado com sucesso, o código foi copiado para área de transfêrencia."
+      );
+    } catch (err) {
+      console.log(err);
+
+      alert("Falha ao criar o bolão, tente novamente.");
+    }
+  }
+
   return (
     <div className="max-w-[1124px] h-screen mx-auto grid grid-cols-2 items-center gap-28">
       <main>
@@ -23,16 +48,18 @@ export default function Home(props: HomeProps) {
         <div className="mt-10 flex items-center gap-2">
           <Image src={usersAvatarExampleImg} alt="" />
           <strong className="text-gray-100 text-xl">
-            <span className="text-ignite-500">+{props.userCount}</span> pessoas já estão
-            usando
+            <span className="text-ignite-500">+{props.userCount}</span> pessoas
+            já estão usando
           </strong>
         </div>
 
-        <form className="mt-10 flex gap-2">
+        <form className="mt-10 flex gap-2" onSubmit={createPool}>
           <input
             placeholder="Qual o nome do seu bolão?"
             type="text"
-            className="flex-1 px-6 py-4 rounded bg-gray-800 border border-gray-600 text-sm"
+            onChange={(event) => setPoolTitle(event.target.value)}
+            value={poolTitle}
+            className="flex-1 px-6 py-4 rounded bg-gray-800 border border-gray-600 text-sm text-gray-100"
             required
           />
           <button
@@ -76,7 +103,7 @@ export default function Home(props: HomeProps) {
   );
 }
 
-export const getServerSideProps = async () => {
+export async function getStaticProps() {
   const [poolCountResponse, guessCountResponse, userCountResponse] =
     await Promise.all([
       api.get("pools/count"),
@@ -90,5 +117,6 @@ export const getServerSideProps = async () => {
       guessCount: guessCountResponse.data.count,
       userCount: userCountResponse.data.count,
     },
+    revalidate: 30,
   };
-};
+}
